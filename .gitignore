@@ -1,0 +1,13 @@
+# Ignore the .refresh_token.txt file as it is personal for the reddit user
+.refresh_token.txt
+
+# Ignore __pycache__
+__pycache__/
+
+# ignore the db
+db.json
+
+# Ignore the assets
+assets/
+
+token.txt

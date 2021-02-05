@@ -25,7 +25,7 @@ async def on_message(mention: discord.Message):
     if match:
         number = int(match.group(1))
         messages = []
-        async for message in mention.channel.history(limit=number + 1, oldest_first=False, before=mention):
+        async for message in mention.channel.history(limit=number, oldest_first=False, before=mention):
             messages.insert(0, Message(message))
         
         thread = []

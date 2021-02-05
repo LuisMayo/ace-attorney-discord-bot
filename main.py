@@ -17,6 +17,11 @@ with open('token.txt', 'r') as tokenFile:
 client = discord.Client()
 
 @client.event
+async def on_ready():
+    game = discord.Game("use: !render <number of messages> | !render 2")
+    await client.change_presence(activity=game)
+
+@client.event
 async def on_message(mention: discord.Message):
     if mention.author == client.user:
         return
@@ -27,7 +32,7 @@ async def on_message(mention: discord.Message):
         messages = []
         async for message in mention.channel.history(limit=number, oldest_first=False, before=mention):
             messages.insert(0, Message(message))
-        
+ 
         thread = []
         users_to_names = {}
         counter = Counter()

@@ -26,7 +26,7 @@ async def on_message(mention: discord.Message):
         number = int(match.group(1))
         messages = []
         i = 0
-        async for message in mention.channel.history(limit=number + 1, oldest_first=False):
+        async for message in mention.channel.history(limit=number + 1, oldest_first=False, before=mention):
             if (i > 0): # We don't insert the last message as it will probably be the mention itself
                 messages.insert(0, Message(message))
             i+=1

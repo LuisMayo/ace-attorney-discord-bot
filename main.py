@@ -26,6 +26,10 @@ async def on_message(mention: discord.Message):
     if mention.author == client.user:
         return
 
+    if mention.guild == None:
+        await mention.channel.send(content='I can\'t process any messages via PM. If you have any problem please go to the support server. https://discord.gg/pcS4MPbRDU')
+        return
+
     match = re.match(r'!render (\d+)', mention.content)
     if match:
         number = int(match.group(1))

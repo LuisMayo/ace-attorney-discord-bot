@@ -33,6 +33,9 @@ async def on_message(mention: discord.Message):
     match = re.match(r'!render (\d+)', mention.content)
     if match:
         number = int(match.group(1))
+        if (number < 2 or number > 150):
+            await mention.channel.send(content='Number of messages must be between 2 and 150')
+            return
         messages = []
         async for message in mention.channel.history(limit=number, oldest_first=False, before=mention):
             messages.insert(0, Message(message))

@@ -1,4 +1,4 @@
-# Ace Attorney telegram Bot
+# Ace Attorney Discord Bot
  Telegram bot that turns comment chains into ace attorney scenes. Inspired by and using https://github.com/micah5/ace-attorney-reddit-bot
  Currently [being executed](https://discord.com/oauth2/authorize?client_id=806980920544460831&permissions=100352&scope=bot).
  

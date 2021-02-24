@@ -2,15 +2,19 @@
  Telegram bot that turns comment chains into ace attorney scenes. Inspired by and using https://github.com/micah5/ace-attorney-reddit-bot
  Currently [being executed](https://discord.com/oauth2/authorize?client_id=806980920544460831&permissions=100352&scope=bot).
  
+ For any problem that may be encountered, you can join the [discord support server](https://discord.gg/pcS4MPbRDU) and we'll try to fix it
+ 
  Check also the [Twiitter](https://github.com/LuisMayo/ace-attorney-twitter-bot), [Reddit](https://github.com/micah5/ace-attorney-reddit-bot) and [Telegram](https://github.com/LuisMayo/ace-attorney-telegram-bot) bots!
  
 ## Getting Started
 
 ### Prerequisites
+Everything included in [/ace-attoney-bot/Readme.md](https://github.com/LuisMayo/ace-attorney-bot/blob/main/README.md). Which has been copied here for easy of use
 
  - Python 3
  - Discord Bot Token. Obtain it from [Discord developer portal](https://discord.com/developers/)
  - Ace Attorney data. Download it [here](https://drive.google.com/drive/folders/1jNpnB3pjHFvOyrfZ-WxlOXNaZ-XH4INx?usp=sharing) and put them in `./assets/`
+ - FFMPEG instalation. In most Linux distros it should be available in the default package manager, although it may have some caveats (check note below). In Windows systems it'd include downloading a [pre-compiled zip folder](https://ffmpeg.org/download.html#build-windows), extracting it and adding the /bin folder into the [system path](https://helpdeskgeek.com/windows-10/add-windows-path-environment-variable/)
  
  
 ### Installing

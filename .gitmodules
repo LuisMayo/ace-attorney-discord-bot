@@ -1,3 +1,4 @@
 [submodule "ace-attorney-bot"]
 	path = ace-attorney-bot
 	url = https://github.com/LuisMayo/ace-attorney-bot
+	branch = main

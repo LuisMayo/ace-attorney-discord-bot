@@ -22,7 +22,7 @@ Everything included in [/ace-attoney-bot/Readme.md](https://github.com/LuisMayo/
 1. Clone the repository with submodules
 
 ```
-git clone --recursive https://github.com/LuisMayo/ace-attorney-telegram-bot
+git clone --recursive https://github.com/LuisMayo/ace-attorney-discord-bot
 ```
 2. Install dependencies of this repo and the child repo
 ``` bash

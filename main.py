@@ -13,8 +13,9 @@ with open('token.txt', 'r') as tokenFile:
     token = tokenFile.read().replace('\r', '').replace('\n', '')
 
 
-
-client = discord.Client()
+intents = discord.Intents.default()
+intents.members = True
+client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
@@ -30,14 +31,24 @@ async def on_message(mention: discord.Message):
         await mention.channel.send(content='I can\'t process any messages via PM. If you have any problem please go to the support server. https://discord.gg/pcS4MPbRDU')
         return
 
-    match = re.match(r'!render (\d+)', mention.content)
+    match = re.match(r'!render (\d+)( \d+)?', mention.content)
     if match:
-        number = int(match.group(1))
+        if match.group(2):
+            num_start = max(map(int, match.groups()))
+            num_stop = min(map(int, match.groups()))
+            number = num_start - num_stop + 1
+        else:
+            number = num_start = int(match.group(1))
+            num_stop = 1
+
+        if (num_start < 1 or num_stop < 1): # Agregar los limites que quieras
+            await mention.channel.send(content='Advertencia sobre rango, ponle lo que quieras xdxd')
+            return
         if (number < 2 or number > 150):
             await mention.channel.send(content='Number of messages must be between 2 and 150')
             return
         messages = []
-        async for message in mention.channel.history(limit=number, oldest_first=False, before=mention):
+        for message in (await mention.channel.history(limit=num_start, oldest_first=False, before=mention).flatten())[num_stop-1:num_start]:
             messages.insert(0, Message(message))
  
         thread = []

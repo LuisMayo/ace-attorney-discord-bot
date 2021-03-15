@@ -52,9 +52,16 @@ async def on_message(mention: discord.Message):
             characters = anim.get_characters(most_common)
             output_filename = str(mention.id) + '.mp4'
             anim.comments_to_scene(thread, characters, output_filename=output_filename)
-            await mention.channel.send(file=discord.File(output_filename))
+            # error = None  # optional: initialize optional error variable for later logging
+            try:
+                await mention.channel.send(file=discord.File(output_filename))
+            except Exception as e:
+                await mention.channel.send("Error: {e}".format(e=e)
+                # error = e  # store error to raise later
             os.remove(output_filename)
+            # if error:
+            #     raise error  # log error by raising
         else:
             await mention.channel.send(content='There should be at least two people in the conversation')
-
+            
 client.run(token)

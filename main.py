@@ -51,7 +51,8 @@ async def on_message(mention: discord.Message):
             most_common = [users_to_names[t[0]] for t in counter.most_common()]
             characters = anim.get_characters(most_common)
             output_filename = str(mention.id) + '.mp4'
-            anim.comments_to_scene(thread, characters, output_filename=output_filename)
+            async with mention.channel.typing():
+                anim.comments_to_scene(thread, characters, output_filename=output_filename)
             await mention.channel.send(file=discord.File(output_filename))
             os.remove(output_filename)
         else:

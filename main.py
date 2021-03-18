@@ -55,7 +55,10 @@ async def on_message(mention: discord.Message):
             try:
                 await mention.channel.send(file=discord.File(output_filename))
             except Exception as e:
-                await mention.channel.send("Error: {e}".format(e=e)
+                try:
+                    await mention.channel.send("Error: {e}".format(e=e)
+                except Exception:
+                    pass
             os.remove(output_filename)
         else:
             await mention.channel.send(content='There should be at least two people in the conversation')

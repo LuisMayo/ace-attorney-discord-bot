@@ -38,7 +38,7 @@ async def on_message(mention: discord.Message):
                 await mention.channel.send(content='Number of messages must be between 2 and 150')
                 return
             messages = []
-            async for message in mention.channel.history(limit=number, oldest_first=False, before=mention):
+            async for message in mention.channel.history(limit=number, oldest_first=False, before=mention.reference.resolved or mention):
                 messages.insert(0, Message(message))
      
             thread = []

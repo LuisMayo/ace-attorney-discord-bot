@@ -56,7 +56,7 @@ async def on_message(mention: discord.Message):
                 await mention.channel.send(file=discord.File(output_filename))
             except Exception as e:
                 try:
-                    await mention.channel.send("Error: {e}".format(e=e)
+                    await mention.channel.send("Error: {e}".format(e=e))
                 except Exception:
                     pass
             os.remove(output_filename)

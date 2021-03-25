@@ -13,8 +13,9 @@ with open('token.txt', 'r') as tokenFile:
     token = tokenFile.read().replace('\r', '').replace('\n', '')
 
 
-
-client = discord.Client()
+intents = discord.Intents.default()
+intents.members = True
+client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():

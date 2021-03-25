@@ -3,8 +3,8 @@ import re
 
 class Message:
     def __init__(self, update: Message):
-        self.user = User(update.author)
-        self.text = re.sub(r'(https?)\S*', '(link)', update.content)
+        self.user = User(update.guild.get_member(update.author.id))
+        self.text = re.sub(r'(https?)\S*', '(link)', update.clean_content)
 
 class User:
     def __init__(self, user):

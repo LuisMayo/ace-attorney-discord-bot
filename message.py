@@ -3,7 +3,11 @@ import re
 
 class Message:
     def __init__(self, update: Message):
-        self.user = User(update.guild.get_member(update.author.id))
+        try:
+            self.user = User(update.guild.get_member(update.author.id))
+        except Exception as e:
+            print(e)
+            self.user = User(update.author)
         self.text = re.sub(r'(https?)\S*', '(link)', update.clean_content)
 
 class User:

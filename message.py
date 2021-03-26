@@ -1,5 +1,4 @@
 from discord import Message
-from discord import mentions
 import re
 
 class Message:

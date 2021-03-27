@@ -40,12 +40,7 @@ async def on_message(mention: discord.Message):
             messages = []
             async for message in mention.channel.history(limit=number, oldest_first=False, before=mention):
                 temp = Message(message)
-                text = False
-                for word in temp.text.split():
-                    if not re.search(":", word):
-                        text = True
-                        break
-                if(text):
+                if temp.text.strip():
                     messages.insert(0, temp)
      
             thread = []

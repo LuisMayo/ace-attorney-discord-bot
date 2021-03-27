@@ -4,10 +4,10 @@ import re
 class Message:
     def __init__(self, update: Message):
         self.user = User(update.author)
-        text_temp = update.clean_content
-        text_temp = re.sub(r'<:\w{2,32}:\d{18}>', '', text_temp) # emojis
-        text_temp = re.sub(r'(https?)\S*', '(link)', text_temp) # links
-        self.text = text_temp
+        tmp = update.clean_content
+        tmp = re.sub(r'<:\w{2,32}:\d{18}>', '', tmp) # emojis
+        tmp = re.sub(r'(https?)\S*', '(link)', tmp) # links
+        self.text = tmp
 
 class User:
     def __init__(self, user):

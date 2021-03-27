@@ -39,9 +39,9 @@ async def on_message(mention: discord.Message):
                 return
             messages = []
             async for message in mention.channel.history(limit=number, oldest_first=False, before=mention):
-                temp = Message(message)
-                if temp.text.strip():
-                    messages.insert(0, temp)
+                msg = Message(message)
+                if msg.text.strip():
+                    messages.insert(0, msg)
      
             thread = []
             users_to_names = {}

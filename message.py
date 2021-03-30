@@ -6,7 +6,6 @@ class Message:
     def __init__(self, update: Message):
         self.user = User(update.author)
         tmp = update.clean_content
-        print(tmp)
         tmp = re.sub(r'(https?)\S*', '(link)', tmp) # links
         tmp = demojize(tmp)
         tmp = re.sub(r'[<[a:]?]?:\w{2,32}:[\d*>]?', '', tmp) # custom static and animated emojis

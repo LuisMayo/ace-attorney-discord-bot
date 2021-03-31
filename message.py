@@ -8,7 +8,8 @@ class Message:
         tmp = update.clean_content
         tmp = re.sub(r'(https?)\S*', '(link)', tmp) # links
         tmp = demojize(tmp)
-        tmp = re.sub(r'[<[a:]?]?:\w{2,32}:[\d*>]?', '', tmp) # custom static and animated emojis
+        tmp = re.sub(r'<[a]?:\w{2,32}:\d{18}>', '', tmp) # custom static and animated emojis
+        tmp = re.sub(r':\w{2,32}:', '', tmp) # stock emojis
         tmp = re.sub(r'​', '', tmp) # @everyone, @here 
         for file in update.attachments: # attachments
             if file.filename.split('.')[-1] in {'jpg', 'jpeg', 'JPG', 'JPEG', 'png', 'PNG'}:

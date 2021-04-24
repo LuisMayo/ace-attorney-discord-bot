@@ -62,8 +62,21 @@ async def on_message(mention: discord.Message):
                         await mention.channel.send("Error: {e}".format(e=e))
                     except Exception:
                         pass
-                os.remove(output_filename)
+                clean(thread, output_filename)
             else:
                 await mention.channel.send(content='There should be at least two people in the conversation')
+
+
+def clean(thread, output_filename):
+    try:
+        os.remove(output_filename)
+    except Exception as second_e:
+        print(second_e)
+    try:
+        for comment in thread:
+            if (comment.evidence is not None):
+                os.remove(comment.evidence)
+    except Exception as second_e:
+        print(second_e)
 
 client.run(token)

@@ -1,10 +1,12 @@
 from discord import Message
 import re
 from emoji.core import demojize
+import requests
 
 class Message:
     def __init__(self, update: Message):
         self.user = User(update.author)
+        self.evidence = None
         tmp = update.clean_content
         tmp = re.sub(r'(https?)\S*', '(link)', tmp) # links
         tmp = demojize(tmp)
@@ -14,6 +16,11 @@ class Message:
         for file in update.attachments: # attachments
             if file.filename.split('.')[-1] in {'jpg', 'jpeg', 'JPG', 'JPEG', 'png', 'PNG'}:
                 tmp += ' (image)'
+                name = str(file.id) + '.png'
+                response = requests.get(file.url)
+                with open(name, 'wb') as file:
+                    file.write(response.content)
+                self.evidence = name
             elif file.filename.split('.')[-1] in {'gif', 'gifv'}:
                 tmp += ' (gif)'
             elif file.filename.split('.')[-1] in {'mp4', 'webm'}:

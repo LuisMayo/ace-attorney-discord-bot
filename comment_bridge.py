@@ -7,6 +7,7 @@ class Comment:
         if (len(self.body) == 0):
             self.body = '...'
         self.score = 0
+        self.evidence = message.evidence
 
 class Author:
     def __init__(self, name):

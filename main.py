@@ -23,7 +23,7 @@ if not token:
 if not prefix:
     sys.exit("The 'prefix' is missing in the 'config.yaml' file!")
 
-client = commands.Bot(command_prefix=prefix, intents=discord.Intents.default())
+client = commands.AutoShardedBot(command_prefix=prefix, intents=discord.Intents.default())
 
 # Removing default help command
 client.remove_command("help")

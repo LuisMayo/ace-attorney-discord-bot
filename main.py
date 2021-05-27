@@ -1,14 +1,14 @@
 import random
 import os
 import sys
-sys.path.insert(0, './ace-attorney-bot')
-import anim
+sys.path.insert(0, './objection_engine')
 import yaml
 import discord
 from discord.ext import commands
 from message import Message
-from collections import Counter
-from comment_bridge import Comment
+from objection_engine.renderer import render_comment_list
+from objection_engine.beans.comment import Comment
+from typing import List
 
 if not os.path.isfile("config.yaml"):
     sys.exit("'config.yaml' is missing!")
@@ -59,26 +59,16 @@ async def help(context):
 
 @client.command()
 async def render(context, numberOfMessages):
-    if numberOfMessages.isdigit() and int(numberOfMessages) in range (2, 151):
-
+    if numberOfMessages.isdigit() and int(numberOfMessages) in range (1, 151):
         messages = []
         async for message in context.channel.history(limit=int(numberOfMessages), oldest_first=False, before=context.message.reference.resolved if context.message.reference else context.message):
             msg = Message(message)
             if msg.text.strip():
-                messages.insert(0, msg)
-     
-        thread = []
-        users_to_names = {}
-        counter = Counter()
-        for message in messages:
-            thread.append(Comment(message))
-            users_to_names[message.user.id] = message.user.name
-            counter.update({message.user.id: 1})
-        if (len(users_to_names) >= 2): 
-            most_common = [users_to_names[t[0]] for t in counter.most_common()]
-            characters = anim.get_characters(most_common)
+                messages.insert(0, msg.to_Comment())
+
+        if (len(messages) >= 1): 
             output_filename = str(context.message.id) + '.mp4'
-            anim.comments_to_scene(thread, characters, output_filename=output_filename)
+            render_comment_list(messages, output_filename)
             try:
                 await context.send(file=discord.File(output_filename))
             except Exception as e:
@@ -87,24 +77,24 @@ async def render(context, numberOfMessages):
                     await context.send(embed=embedResponse, mention_author=False)
                 except Exception:
                     pass
-            clean(thread, output_filename)
+            clean(messages, output_filename)
         else:
-            embedResponse = discord.Embed(description="There should be at least two people in the conversation", color=0xff0000)
+            embedResponse = discord.Embed(description="There should be at least one person in the conversation", color=0xff0000)
             await context.send(embed=embedResponse, mention_author=False)
     else:
-        embedResponse = discord.Embed(description="Number of messages must be between 2 and 150", color=0xff0000)
+        embedResponse = discord.Embed(description="Number of messages must be between 1 and 150", color=0xff0000)
         await context.reply(embed=embedResponse, mention_author=False)
         return
 
-def clean(thread, output_filename):
+def clean(thread: List[Comment], output_filename):
     try:
         os.remove(output_filename)
     except Exception as second_e:
         print(second_e)
     try:
         for comment in thread:
-            if (comment.evidence is not None):
-                os.remove(comment.evidence)
+            if (comment.evidence_path is not None):
+                os.remove(comment.evidence_path)
     except Exception as second_e:
         print(second_e)
 

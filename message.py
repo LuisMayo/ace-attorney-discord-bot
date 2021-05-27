@@ -2,6 +2,7 @@ from discord import Message
 import re
 from emoji.core import demojize
 import requests
+from objection_engine.beans.comment import Comment
 
 class Message:
     def __init__(self, update: Message):
@@ -30,6 +31,8 @@ class Message:
             else:
                 tmp += ' (file)'
         self.text = tmp
+    def to_Comment(self):
+        return Comment(user_id=self.user.id, user_name=self.user.name, text_content=self.text, evidence_path=self.evidence)
 
 class User:
     def __init__(self, user):

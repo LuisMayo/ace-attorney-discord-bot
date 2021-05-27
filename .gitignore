@@ -10,4 +10,4 @@ db.json
 # Ignore the assets
 assets/
 
-token.txt
+config.yaml

@@ -9,6 +9,9 @@ from message import Message
 from objection_engine.renderer import render_comment_list
 from objection_engine.beans.comment import Comment
 from typing import List
+from threading import Thread
+from queue import Queue
+from asyncio import sleep
 
 if not os.path.isfile("config.yaml"):
     sys.exit("'config.yaml' is missing!")
@@ -18,6 +21,7 @@ else:
         token = configuration["token"].strip()
         prefix = configuration["prefix"].strip()
 
+render_queue = Queue(configuration["queue"] or 2000)
 if not token:
     sys.exit("The 'token' is missing in the 'config.yaml' file!")
 if not prefix:
@@ -60,31 +64,47 @@ async def help(context):
 @client.command()
 async def render(context, numberOfMessages):
     if numberOfMessages.isdigit() and int(numberOfMessages) in range (1, 151):
-        messages = []
-        async for message in context.channel.history(limit=int(numberOfMessages), oldest_first=False, before=context.message.reference.resolved if context.message.reference else context.message):
-            msg = Message(message)
-            if msg.text.strip():
-                messages.insert(0, msg.to_Comment())
-
-        if (len(messages) >= 1): 
-            output_filename = str(context.message.id) + '.mp4'
-            render_comment_list(messages, output_filename)
-            try:
-                await context.send(file=discord.File(output_filename))
-            except Exception as e:
-                try:
-                    embedResponse = discord.Embed(description=f"Error: {e}", color=0xff0000)
-                    await context.send(embed=embedResponse, mention_author=False)
-                except Exception:
-                    pass
-            clean(messages, output_filename)
-        else:
-            embedResponse = discord.Embed(description="There should be at least one person in the conversation", color=0xff0000)
+        saved_event = {'ctx': context, 'number': numberOfMessages}
+        try:
+            render_queue.put(saved_event, timeout=20)
+        except:
+            embedResponse = discord.Embed(description="I can't take any more petitions, the queue is full. Sorry!", color=0xff0000)
             await context.send(embed=embedResponse, mention_author=False)
+        print(render_queue.qsize())
     else:
         embedResponse = discord.Embed(description="Number of messages must be between 1 and 150", color=0xff0000)
         await context.reply(embed=embedResponse, mention_author=False)
         return
+
+async def next_render():
+    while True:
+        params = render_queue.get()
+        # We basically have two options here. Await the call so we only process X videos at the same time, or don't do it so unlimited threads could spawn
+        await process_render(params['ctx'], params['number'])
+
+async def process_render(context, numberOfMessages):
+    messages = []
+    async for message in context.channel.history(limit=int(numberOfMessages), oldest_first=False, before=context.message.reference.resolved if context.message.reference else context.message):
+        msg = Message(message)
+        if msg.text.strip():
+            messages.insert(0, msg.to_Comment())
+
+    if (len(messages) >= 1): 
+        output_filename = str(context.message.id) + '.mp4'
+        sleep(1)
+        render_comment_list(messages, output_filename)
+        try:
+            await context.send(file=discord.File(output_filename))
+        except Exception as e:
+            try:
+                embedResponse = discord.Embed(description=f"Error: {e}", color=0xff0000)
+                await context.send(embed=embedResponse, mention_author=False)
+            except Exception:
+                pass
+        clean(messages, output_filename)
+    else:
+        embedResponse = discord.Embed(description="There should be at least one person in the conversation", color=0xff0000)
+        await context.send(embed=embedResponse, mention_author=False)
 
 def clean(thread: List[Comment], output_filename):
     try:
@@ -98,4 +118,6 @@ def clean(thread: List[Comment], output_filename):
     except Exception as second_e:
         print(second_e)
 
+Thread(target=next_render).start()
+Thread(target=next_render).start()
 client.run(configuration["token"])

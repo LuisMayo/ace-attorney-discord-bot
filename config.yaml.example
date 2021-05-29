@@ -1,2 +1,3 @@
 token: ""
 prefix: "!"
+queue: 100

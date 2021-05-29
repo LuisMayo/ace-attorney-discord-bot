@@ -11,7 +11,6 @@ from objection_engine.beans.comment import Comment
 from typing import List
 from threading import Thread
 from queue import Queue
-render_queue = Queue(1)
 
 if not os.path.isfile("config.yaml"):
     sys.exit("'config.yaml' is missing!")
@@ -21,6 +20,7 @@ else:
         token = configuration["token"].strip()
         prefix = configuration["prefix"].strip()
 
+render_queue = Queue(configuration["queue"] or 2000)
 if not token:
     sys.exit("The 'token' is missing in the 'config.yaml' file!")
 if not prefix:
@@ -75,11 +75,11 @@ async def render(context, numberOfMessages):
         await context.reply(embed=embedResponse, mention_author=False)
         return
 
-def next_render():
+async def next_render():
     while True:
         params = render_queue.get()
         # We basically have two options here. Await the call so we only process X videos at the same time, or don't do it so unlimited threads could spawn
-        process_render(params['ctx'], params['number'])
+        await process_render(params['ctx'], params['number'])
 
 async def process_render(context, numberOfMessages):
     messages = []
@@ -116,7 +116,6 @@ def clean(thread: List[Comment], output_filename):
     except Exception as second_e:
         print(second_e)
 
-Thread(target=next_render).start()
 Thread(target=next_render).start()
 Thread(target=next_render).start()
 client.run(configuration["token"])

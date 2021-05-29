@@ -11,6 +11,7 @@ from objection_engine.beans.comment import Comment
 from typing import List
 from threading import Thread
 from queue import Queue
+from asyncio import sleep
 
 if not os.path.isfile("config.yaml"):
     sys.exit("'config.yaml' is missing!")
@@ -90,6 +91,7 @@ async def process_render(context, numberOfMessages):
 
     if (len(messages) >= 1): 
         output_filename = str(context.message.id) + '.mp4'
+        sleep(1)
         render_comment_list(messages, output_filename)
         try:
             await context.send(file=discord.File(output_filename))

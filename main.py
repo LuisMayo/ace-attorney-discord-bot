@@ -4,11 +4,18 @@ import sys
 sys.path.insert(0, './objection_engine')
 import yaml
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from message import Message
+import threading
+import asyncio
 from objection_engine.renderer import render_comment_list
 from objection_engine.beans.comment import Comment
 from typing import List
+
+currentActivity = ""
+videoRenderQueue = []
+messageQueue = []
+deletionQueue = []
 
 if not os.path.isfile("config.yaml"):
     sys.exit("'config.yaml' is missing!")
@@ -17,23 +24,39 @@ else:
         configuration = yaml.load(file, Loader=yaml.FullLoader)
         token = configuration["token"].strip()
         prefix = configuration["prefix"].strip()
+        deletionDelay = configuration["deletionDelay"].strip()
 
 if not token:
     sys.exit("The 'token' is missing in the 'config.yaml' file!")
 if not prefix:
     sys.exit("The 'prefix' is missing in the 'config.yaml' file!")
+if not deletionDelay:
+    sys.exit("The 'deletionDelay' is missing in the 'config.yaml' file!")
 
 client = commands.AutoShardedBot(command_prefix=prefix, intents=discord.Intents.default())
 
 # Removing default help command
 client.remove_command("help")
 
+async def changeActivity(text):
+    try:
+        global currentActivity
+
+        if currentActivity == text:
+            return
+        else:    
+            activity = discord.Game(text)
+            await client.change_presence(activity=activity)
+            currentActivity = text
+            print(f"Activity changed to {currentActivity}")
+    except Exception as e:
+        pass
+
 @client.event
 async def on_ready():
+    messageLoop.start()
     print("Bot is ready!")
     print(f"Logged in as {client.user.name}#{client.user.discriminator} ({client.user.id})")
-    activity = discord.Game(f"{prefix}help")
-    await client.change_presence(activity=activity)
 
 @client.event
 async def on_message(message):
@@ -59,31 +82,28 @@ async def help(context):
 
 @client.command()
 async def render(context, numberOfMessages):
+    feedbackMessage = await context.send(content="`Fetching messages...`")
     if numberOfMessages.isdigit() and int(numberOfMessages) in range (1, 151):
         messages = []
         async for message in context.channel.history(limit=int(numberOfMessages), oldest_first=False, before=context.message.reference.resolved if context.message.reference else context.message):
             msg = Message(message)
             if msg.text.strip():
                 messages.insert(0, msg.to_Comment())
+                print(msg.text)
 
         if (len(messages) >= 1): 
-            output_filename = str(context.message.id) + '.mp4'
-            render_comment_list(messages, output_filename)
-            try:
-                await context.send(file=discord.File(output_filename))
-            except Exception as e:
-                try:
-                    embedResponse = discord.Embed(description=f"Error: {e}", color=0xff0000)
-                    await context.send(embed=embedResponse, mention_author=False)
-                except Exception:
-                    pass
-            clean(messages, output_filename)
+            
+            await feedbackMessage.edit(content="`Fetching messages... Done!`\n`Queued, please wait...`\n")
+            videoRender = (False, message.id, messages, "")
+            videoRenderQueue.append(videoRender)
+            newMessage = (message, context, feedbackMessage.id)
+            messageQueue.append(newMessage)
         else:
             embedResponse = discord.Embed(description="There should be at least one person in the conversation", color=0xff0000)
-            await context.send(embed=embedResponse, mention_author=False)
+            await feedbackMessage.edit(content="", embed=embedResponse, mention_author=False)
     else:
         embedResponse = discord.Embed(description="Number of messages must be between 1 and 150", color=0xff0000)
-        await context.reply(embed=embedResponse, mention_author=False)
+        await feedbackMessage.edit(content="", embed=embedResponse, mention_author=False)
         return
 
 def clean(thread: List[Comment], output_filename):
@@ -98,4 +118,96 @@ def clean(thread: List[Comment], output_filename):
     except Exception as second_e:
         print(second_e)
 
-client.run(configuration["token"])
+def rendererCall():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    loop.run_until_complete(backgroundRenderer())
+    loop.close()
+
+async def backgroundRenderer():
+    while True:
+        try:
+            length = len(videoRenderQueue)
+            if length <= 0:
+                continue
+            for index in range(length):
+                videoRender = videoRenderQueue[index]
+                if videoRender[0] == False:
+                    output_filename = str(videoRender[1]) + '.mp4'
+                    render_comment_list(videoRender[2], output_filename)
+
+                    newVideoRenderTuple = (True, videoRender[1], videoRender[2], output_filename)
+                    videoRenderQueue.remove(videoRender)
+                    videoRenderQueue.insert(index, newVideoRenderTuple)
+        except Exception as e:
+            pass
+
+@tasks.loop(seconds=1)
+async def messageLoop():
+    await changeActivity(f"{prefix}help | queue: {len(messageQueue)}")
+    try:
+        length = len(messageQueue)
+        if length > 0:
+            for index in range(length-1, -1, -1):
+                currentMessage = messageQueue[index]
+                message = currentMessage[0]
+                context = currentMessage[1]
+                feedbackMessageId = currentMessage[2]
+                feedbackMessage = await context.channel.fetch_message(feedbackMessageId)
+
+                if index == 0:
+                    newContent = "`Fetching messages... Done!`\n`Your video is being generated...`\n"
+                    if feedbackMessage.content != newContent:
+                        await feedbackMessage.edit(content = newContent)
+                    
+                for videoRender in videoRenderQueue:
+                    if videoRender[1] == message.id:
+                        if videoRender[0]:
+                            try:
+                                await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Uploading file to Discord...`")
+                                await context.send(file=discord.File(videoRender[3]), mention_author=False)
+                                await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Uploading file to Discord... Done!`")
+                            except Exception as e:
+                                try:
+                                    await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Uploading file to Discord... Failed!`")
+                                    embedResponse = discord.Embed(description=f"Error: {e}", color=0xff0000)
+                                    await context.send(embed=embedResponse, mention_author=False)
+                                except Exception:
+                                    pass
+                            
+                            # The "feedback" message is added to the deletion queue
+                            messageToBeDeleted = (context, feedbackMessageId, int(deletionDelay))
+                            deletionQueue.append(messageToBeDeleted)
+                            clean(videoRender[2], videoRender[3])
+                            videoRenderQueue.remove(videoRender)
+                            messageQueue.remove(currentMessage)
+                            
+                            break
+    except Exception as e:
+        pass
+    try:
+        if int(deletionDelay) > 0:
+            length = len(deletionQueue)
+            if length > 0:
+                for index in range(length-1, -1, -1):
+                    if (index > len(deletionQueue)-1):
+                        break
+                    currentMessage = deletionQueue[index]
+                    newMessageTuple = (currentMessage[0], currentMessage[1], int(currentMessage[2])-1)
+                    deletionQueue.remove(currentMessage)
+                    if (int(newMessageTuple[2]) > 0):
+                        deletionQueue.insert(index, newMessageTuple)
+                    else:
+                        message = await currentMessage[0].channel.fetch_message(currentMessage[1])
+                        await message.delete()
+                        index = index - 1
+    except Exception as e:
+        pass
+                    
+
+th = threading.Thread(target=rendererCall)
+th.start()
+
+client.run(token)
+th.join()

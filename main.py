@@ -1,3 +1,4 @@
+import re
 import random
 import os
 import sys
@@ -13,6 +14,8 @@ from objection_engine.beans.comment import Comment
 from typing import List
 
 currentActivity = ""
+
+# queue Lists
 videoRenderQueue = []
 messageQueue = []
 deletionQueue = []
@@ -89,7 +92,6 @@ async def render(context, numberOfMessages):
             msg = Message(message)
             if msg.text.strip():
                 messages.insert(0, msg.to_Comment())
-                print(msg.text)
 
         if (len(messages) >= 1): 
             
@@ -108,7 +110,8 @@ async def render(context, numberOfMessages):
 
 def clean(thread: List[Comment], output_filename):
     try:
-        os.remove(output_filename)
+        if re.match("^failed\s", output_filename):
+            os.remove(output_filename)
     except Exception as second_e:
         print(second_e)
     try:
@@ -134,12 +137,17 @@ async def backgroundRenderer():
             for index in range(length):
                 videoRender = videoRenderQueue[index]
                 if videoRender[0] == False:
-                    output_filename = str(videoRender[1]) + '.mp4'
-                    render_comment_list(videoRender[2], output_filename)
+                    try:
+                        output_filename = str(videoRender[1]) + '.mp4'
+                        render_comment_list(videoRender[2], output_filename)
 
-                    newVideoRenderTuple = (True, videoRender[1], videoRender[2], output_filename)
-                    videoRenderQueue.remove(videoRender)
-                    videoRenderQueue.insert(index, newVideoRenderTuple)
+                        newVideoRenderTuple = (True, videoRender[1], videoRender[2], output_filename)
+                        videoRenderQueue.remove(videoRender)
+                        videoRenderQueue.insert(index, newVideoRenderTuple)
+                    except Exception as e:
+                        newVideoRenderTuple = (True, videoRender[1], videoRender[2], f"failed {e}")
+                        videoRenderQueue.remove(videoRender)
+                        videoRenderQueue.insert(index, newVideoRenderTuple)
         except Exception as e:
             pass
 
@@ -165,21 +173,36 @@ async def messageLoop():
                     if videoRender[1] == message.id:
                         if videoRender[0]:
                             try:
-                                await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Uploading file to Discord...`")
-                                await context.send(file=discord.File(videoRender[3]), mention_author=False)
-                                await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Uploading file to Discord... Done!`")
+                                if re.match("^failed\s", videoRender[3]):
+                                    await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Failed!`")
+                                    
+                                    error = re.sub("^failed", "", videoRender[3])
+                                    embedResponse = discord.Embed(description=f"Error: {error}", color=0xff0000)
+                                    errorMessage = await context.send(embed=embedResponse, mention_author=False)
+                                    messageToBeDeleted = (context, errorMessage.id, int(deletionDelay))
+                                    deletionQueue.append(messageToBeDeleted)
+                                else:
+                                    await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Uploading file to Discord...`")
+                                    await context.send(file=discord.File(videoRender[3]), mention_author=False)
+                                    await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Uploading file to Discord... Done!`")
                             except Exception as e:
                                 try:
                                     await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Uploading file to Discord... Failed!`")
                                     embedResponse = discord.Embed(description=f"Error: {e}", color=0xff0000)
-                                    await context.send(embed=embedResponse, mention_author=False)
+                                    errorMessage = await context.send(embed=embedResponse, mention_author=False)
+                                    messageToBeDeleted = (context, errorMessage.id, int(deletionDelay))
+                                    deletionQueue.append(messageToBeDeleted)
                                 except Exception:
                                     pass
                             
                             # The "feedback" message is added to the deletion queue
                             messageToBeDeleted = (context, feedbackMessageId, int(deletionDelay))
                             deletionQueue.append(messageToBeDeleted)
+
+                            # clean function called
                             clean(videoRender[2], videoRender[3])
+
+                            # both the video and the message are removed from the queue, once posted/failed
                             videoRenderQueue.remove(videoRender)
                             messageQueue.remove(currentMessage)
                             

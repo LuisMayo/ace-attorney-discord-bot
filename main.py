@@ -195,10 +195,9 @@ async def messageLoop():
                                     try:
                                         if (fileSizeBytes) >= 8:
                                             await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Video file too big for discord! ({fileSizeBytes} MB)`\n`Trying to upload file to an external server...`")
-                                            videoFile = open(videoRender[3], 'rb')
-                                            files = {'files[]': (videoRender[3], videoFile)}
-                                            response = requests.post('https://tmp.ninja/upload.php?output=text', files=files)
-                                            videoFile.close()
+                                            with open(videoRender[3], 'rb') as videoFile:
+                                                files = {'files[]': (videoRender[3], videoFile)}
+                                                response = requests.post('https://tmp.ninja/upload.php?output=text', files=files)
                                             await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Video file too big for discord! ({fileSizeBytes} MB)`\n`Trying to upload file to an external server... Done!`")
                                             url = response.content.decode("utf-8").strip()
                                             await context.send(content=f"{url}\n_This video will be deleted in 48 hours_")

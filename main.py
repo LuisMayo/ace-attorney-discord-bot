@@ -12,6 +12,7 @@ import asyncio
 from objection_engine.renderer import render_comment_list
 from objection_engine.beans.comment import Comment
 from typing import List
+import requests
 
 currentActivity = ""
 
@@ -110,8 +111,7 @@ async def render(context, numberOfMessages):
 
 def clean(thread: List[Comment], output_filename):
     try:
-        if re.match("^failed\s", output_filename):
-            os.remove(output_filename)
+        os.remove(output_filename)
     except Exception as second_e:
         print(second_e)
     try:
@@ -165,6 +165,7 @@ async def messageLoop():
                 feedbackMessage = await context.channel.fetch_message(feedbackMessageId)
 
                 if index == 0:
+                    # Updates message (only if it hasn't already been updated) to reflect that it's first in the queue. 
                     newContent = "`Fetching messages... Done!`\n`Your video is being generated...`\n"
                     if feedbackMessage.content != newContent:
                         await feedbackMessage.edit(content = newContent)
@@ -172,26 +173,42 @@ async def messageLoop():
                 for videoRender in videoRenderQueue:
                     if videoRender[1] == message.id:
                         if videoRender[0]:
+                            fileSizeBytes = 0
                             try:
                                 if re.match("^failed\s", videoRender[3]):
                                     await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Failed!`")
-                                    
                                     error = re.sub("^failed", "", videoRender[3])
                                     embedResponse = discord.Embed(description=f"Error: {error}", color=0xff0000)
-                                    errorMessage = await context.send(embed=embedResponse, mention_author=False)
+                                    errorMessage = await context.send(embed=embedResponse)
                                     messageToBeDeleted = (context, errorMessage.id, int(deletionDelay))
                                     deletionQueue.append(messageToBeDeleted)
                                 else:
                                     await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Uploading file to Discord...`")
-                                    await context.send(file=discord.File(videoRender[3]), mention_author=False)
-                                    await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Uploading file to Discord... Done!`")
+                                    fileSizeBytes = round((os.path.getsize(videoRender[3])/1000000), 2)
+                                    if (fileSizeBytes) >= 8:
+                                        raise Exception()
+                                    else:
+                                        await context.send(file=discord.File(videoRender[3]))
+                                        await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Uploading file to Discord... Done!`")
                             except Exception as e:
                                 try:
-                                    await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Uploading file to Discord... Failed!`")
-                                    embedResponse = discord.Embed(description=f"Error: {e}", color=0xff0000)
-                                    errorMessage = await context.send(embed=embedResponse, mention_author=False)
-                                    messageToBeDeleted = (context, errorMessage.id, int(deletionDelay))
-                                    deletionQueue.append(messageToBeDeleted)
+                                    try:
+                                        if (fileSizeBytes) >= 8:
+                                            await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Video file too big for discord! ({fileSizeBytes} MB)`\n`Trying to upload file to an external server...`")
+                                            with open(videoRender[3], 'rb') as videoFile:
+                                                files = {'files[]': (videoRender[3], videoFile)}
+                                                response = requests.post('https://tmp.ninja/upload.php?output=text', files=files)
+                                            await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Video file too big for discord! ({fileSizeBytes} MB)`\n`Trying to upload file to an external server... Done!`")
+                                            url = response.content.decode("utf-8").strip()
+                                            await context.send(content=f"{url}\n_This video will be deleted in 48 hours_")
+                                        else:
+                                            raise Exception(e)
+                                    except Exception as e:
+                                        await feedbackMessage.edit(content=f"`Fetching messages... Done!`\n`Your video is being generated... Done!`\n`Video file too big for discord! ({fileSizeBytes} MB)`\n`Trying to upload file to an external server... Failed!`")
+                                        embedResponse = discord.Embed(description=f"Error: {e}", color=0xff0000)
+                                        errorMessage = await context.send(embed=embedResponse)
+                                        messageToBeDeleted = (context, errorMessage.id, int(deletionDelay))
+                                        deletionQueue.append(messageToBeDeleted)
                                 except Exception:
                                     pass
                             

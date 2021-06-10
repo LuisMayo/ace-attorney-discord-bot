@@ -8,7 +8,11 @@ class Deletion:
     async def update(self):
         self.remainingTime = self.remainingTime - 1
         if (self.remainingTime <= 0):
-            await self.message.delete()
-            return True
+            try:
+                await self.message.delete()
+            except Exception as exception:
+                print(f"Error: {exception}")
+            finally:
+                return True
         else:
             return False

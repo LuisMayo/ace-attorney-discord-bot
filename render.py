@@ -40,5 +40,11 @@ class Render:
         self.state = state
         
     async def updateFeedback(self, newContent: str):
-        if self.feedbackMessage.content != textwrap.dedent(newContent):
-            await self.feedbackMessage.edit(content=textwrap.dedent(newContent))
+        try:
+            # If it's unable to edit/get the feedback message, that means that it no longer exists
+            if self.feedbackMessage.content != textwrap.dedent(newContent):
+                await self.feedbackMessage.edit(content=textwrap.dedent(newContent))
+        except Exception as exception:
+            # If it doesn't exists, we will repost it.
+            print(f"Error: {exception}")
+            self.feedbackMessage = await self.discordContext.send(content=textwrap.dedent(newContent))

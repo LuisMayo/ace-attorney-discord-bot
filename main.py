@@ -18,7 +18,6 @@ from render import Render, State
 from typing import List
 
 # Global Variables:
-currentActivityText = ""
 renderQueue = []
 deletionQueue = []
 
@@ -93,13 +92,37 @@ async def help(context):
     helpMessage = await context.send(embed=helpEmbed)
     addToDeletionQueue(helpMessage)
 
+# This command is only for the bot owner, it will ignore everybody else
+@courtBot.command()
+@commands.is_owner()
+async def queue(context):
+    filename = "queue.txt"
+    with open(filename, 'w', encoding="utf-8") as queue:
+        global renderQueue
+        renderQueueSize = len(renderQueue)
+        queue.write(f"There are {renderQueueSize} item(s) in the queue!\n")
+        for positionInQueue, render in enumerate(iterable=renderQueue):
+            queue.write(f"\n#{positionInQueue:04}\n")
+            try: queue.write(f"Requested by: {render.getContext().author.name}#{render.getContext().author.discriminator}\n")
+            except: pass
+            try: queue.write(f"Number of messages: {len(render.getMessages())}\n")
+            except: pass
+            try: queue.write(f"Guild: {render.getFeedbackMessage().channel.guild.name}\n")
+            except: pass
+            try: queue.write(f"Channel: #{render.getFeedbackMessage().channel.name}\n")
+            except: pass
+            try: queue.write(f"State: #{render.getStateString()}\n")
+            except: pass
+    await context.send(file=discord.File(filename))
+    clean([], filename)
+
 @courtBot.command()
 async def render(context, numberOfMessages: int):
     global renderQueue
     feedbackMessage = await context.send(content="`Fetching messages...`")
     try:
         if not (numberOfMessages in range(1, 151)):
-            raise Exception("Number of messages must be between 1 and 150.")
+            raise Exception("Number of messages must be between 1 and 150")
 
         # baseMessage is the message from which the specified number of messages will be fetch, not including itself
         baseMessage = context.message.reference.resolved if context.message.reference else context.message
@@ -113,7 +136,11 @@ async def render(context, numberOfMessages: int):
             numberOfMessages = numberOfMessages - 1
             discordMessages.append(baseMessage)
 
-        async for discordMessage in context.channel.history(limit=numberOfMessages, oldest_first=False, before=baseMessage):
+        # This will append all messages to the already existing discordMessages, if the message was a reply it should already
+        # include one message (the one it was replying to), if not: it will be empty at this point.
+        discordMessages += await context.channel.history(limit=numberOfMessages, oldest_first=False, before=baseMessage).flatten()
+        
+        for discordMessage in discordMessages:
             message = Message(discordMessage)
             if message.text.strip():
                 courtMessages.insert(0, message.to_Comment())
@@ -169,8 +196,6 @@ async def renderQueueLoop():
                 render.setState(State.DONE)
 
             if render.getState() == State.RENDERED:
-
-                
                 newFeedback = f"""
                 `Fetching messages... Done!`
                 `Your video is being generated... Done!`
@@ -252,13 +277,13 @@ def clean(thread: List[Comment], filename):
     try:
         os.remove(filename)
     except Exception as exception:
-        print(exception)
+        print(f"Error: {exception}")
     try:
         for comment in thread:
             if (comment.evidence_path is not None):
                 os.remove(comment.evidente_path)
     except Exception as exception:
-        print(exception)
+        print(f"Error: {exception}")
 
 def renderThread():
     loop = asyncio.new_event_loop()

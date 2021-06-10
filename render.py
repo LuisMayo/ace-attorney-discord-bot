@@ -21,6 +21,18 @@ class Render:
         self.messages = messages
         self.outputFilename = f"{str(discordContext.message.id)}.mp4"
 
+    def getStateString(self):
+        if self.state == State.QUEUED:
+            return "QUEUED"
+        if self.state == State.INPROGRESS:
+            return "INPROGRESS"
+        if self.state == State.FAILED:
+            return "FAILED"
+        if self.state == State.RENDERED:
+            return "RENDERED"
+        if self.state == State.DONE:
+            return "DONE"
+
     def getState(self):
         return self.state
         

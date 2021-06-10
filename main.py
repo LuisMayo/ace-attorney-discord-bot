@@ -5,6 +5,7 @@ import random
 import requests
 import sys
 import threading
+import time
 import yaml
 
 sys.path.append("./objection_engine")
@@ -295,6 +296,7 @@ def renderThread():
 async def backgroundRenderer():
     global renderQueue
     while True:
+        time.sleep(2)
         try:
             for render in renderQueue:
                 if render.getState() == State.QUEUED:
@@ -309,6 +311,7 @@ async def backgroundRenderer():
             print(f"Error: {exception}")
 
 backgroundThread = threading.Thread(target=renderThread)
+backgroundThread.name = "RenderThread"
 backgroundThread.start()
 
 courtBot.run(token)

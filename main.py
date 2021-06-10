@@ -225,7 +225,7 @@ async def renderQueueLoop():
                         await render.updateFeedback(newFeedback)
                         with open(render.getOutputFilename(), 'rb') as videoFile:
                             files = {'files[]': (render.getOutputFilename(), videoFile)}
-                            response = requests.post('https://tmp.ninja/upload.php?output=text', files=files).content.decode("utf-8").strip()
+                            response = requests.post('https://uguu.se/upload.php?output=text', files=files).content.decode("utf-8").strip()
                             newFeedback = f"""
                             `Fetching messages... Done!`
                             `Your video is being generated... Done!`

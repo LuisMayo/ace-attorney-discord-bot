@@ -111,7 +111,7 @@ async def queue(context):
             except: pass
             try: queue.write(f"Channel: #{render.getFeedbackMessage().channel.name}\n")
             except: pass
-            try: queue.write(f"State: #{render.getStateString()}\n")
+            try: queue.write(f"State: {render.getStateString()}\n")
             except: pass
     await context.send(file=discord.File(filename))
     clean([], filename)

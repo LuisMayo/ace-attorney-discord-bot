@@ -23,15 +23,15 @@ class Render:
 
     def getStateString(self):
         if self.state == State.QUEUED:
-            return "QUEUED"
+            return "Queued"
         if self.state == State.INPROGRESS:
-            return "INPROGRESS"
+            return "In progress"
         if self.state == State.FAILED:
-            return "FAILED"
+            return "Failed"
         if self.state == State.RENDERED:
-            return "RENDERED"
+            return "Rendered"
         if self.state == State.DONE:
-            return "DONE"
+            return "Done"
 
     def getState(self):
         return self.state

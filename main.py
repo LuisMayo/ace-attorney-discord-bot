@@ -69,8 +69,10 @@ async def changeActivity(newActivityText):
         print(f"Error: {exception}")
 
 def addToDeletionQueue(message: discord.Message):
-    newDeletion = Deletion(message, int(deletionDelay))
-    deletionQueue.append(newDeletion)
+    # Only if deletion delay is grater than 0, add it to the deletionQueue.
+    if int(deletionDelay) > 0:
+        newDeletion = Deletion(message, int(deletionDelay))
+        deletionQueue.append(newDeletion)
 
 @courtBot.event
 async def on_message(message):

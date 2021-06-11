@@ -1,4 +1,3 @@
-import asyncio
 import discord
 import os
 import random
@@ -289,13 +288,6 @@ def clean(thread: List[Comment], filename):
         print(f"Error: {exception}")
 
 def renderThread():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
-    loop.run_until_complete(backgroundRenderer())
-    loop.close()
-
-async def backgroundRenderer():
     global renderQueue
     while True:
         time.sleep(2)
@@ -312,8 +304,7 @@ async def backgroundRenderer():
         except Exception as exception:
             print(f"Error: {exception}")
 
-backgroundThread = threading.Thread(target=renderThread)
-backgroundThread.name = "RenderThread"
+backgroundThread = threading.Thread(target=renderThread, name="RenderThread")
 backgroundThread.start()
 
 courtBot.run(token)

@@ -11,7 +11,8 @@ class State(Enum):
     INPROGRESS = 1
     FAILED = 2
     RENDERED = 3
-    DONE = 4
+    UPLOADING = 4
+    DONE = 5
 
 class Render:
     def __init__(self, state: State, discordContext: Context, feedbackMessage: Message, messages: List[Comment]):
@@ -30,6 +31,8 @@ class Render:
             return "Failed"
         if self.state == State.RENDERED:
             return "Rendered"
+        if self.state == State.UPLOADING:
+            return "Uploading"
         if self.state == State.DONE:
             return "Done"
 

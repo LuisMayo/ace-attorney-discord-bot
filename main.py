@@ -205,6 +205,8 @@ async def renderQueueLoop():
                 """
                 await render.updateFeedback(newFeedback)
 
+                render.setState(State.UPLOADING)
+
                 # If the file size is lower than the maximun file size allowed in this guild, upload it to Discord
                 fileSize = os.path.getsize(render.getOutputFilename())
                 if fileSize < render.getContext().channel.guild.filesize_limit:

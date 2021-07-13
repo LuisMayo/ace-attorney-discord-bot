@@ -174,12 +174,12 @@ async def deletionQueueLoop():
             if await deletionQueue[index].update():
                 deletionQueue.pop(index)
 
-@tasks.loop(seconds=5)
+@tasks.loop(seconds=1)
 async def renderQueueLoop():
     global renderQueue
     renderQueueSize = len(renderQueue)
     await changeActivity(f"{prefix}help | queue: {renderQueueSize}")
-    for positionInQueue, render in enumerate(iterable=renderQueue, start=1):
+    for positionInQueue, render in enumerate(iterable=renderQueue):
         try:
             if render.getState() == State.QUEUED:
                 newFeedback = f"""
@@ -216,7 +216,7 @@ async def renderQueueLoop():
                 # If the file size is lower than the maximun file size allowed in this guild, upload it to Discord
                 fileSize = os.path.getsize(render.getOutputFilename())
                 if fileSize < render.getContext().channel.guild.filesize_limit:
-                    await render.getContext().send(content=render.getContext().author.mention, file=discord.File(render.getOutputFilename()))
+                    await render.getContext().send(file=discord.File(render.getOutputFilename()))
                     render.setState(State.DONE)
                     newFeedback = f"""
                     `Fetching messages... Done!`
@@ -243,7 +243,7 @@ async def renderQueueLoop():
                             `Trying to upload file to an external server... Done!`
                             """
                             await render.updateFeedback(newFeedback)
-                            await render.getContext().send(content=f"{render.getContext().author.mention}\n{response}\n_This video will be deleted in 48 hours_")
+                            await render.getContext().send(content=f"{response}\n_This video will be deleted in 48 hours_")
                             render.setState(State.DONE)
 
                     except Exception as exception:
@@ -278,10 +278,8 @@ async def renderQueueLoop():
 
 @courtBot.event
 async def on_ready():
-    global currentActivityText
     print("Bot is ready!")
     print(f"Logged in as {courtBot.user.name}#{courtBot.user.discriminator} ({courtBot.user.id})")
-    currentActivityText = f"{prefix}help"
     renderQueueLoop.start()
     deletionQueueLoop.start()
 
@@ -311,8 +309,6 @@ def renderThread():
                     except Exception as exception:
                         print(f"Error: {exception}")
                         render.setState(State.FAILED)
-                    finally:
-                        break
         except Exception as exception:
             print(f"Error: {exception}")
 

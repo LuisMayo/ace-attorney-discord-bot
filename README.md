@@ -28,7 +28,7 @@ python -m pip install -r requirements.txt
 python -m pip install -r objection_engine/requirements.txt
 ```
 
-3. Put yout Token in a `token.txt` file
+3. Copy `config.yaml.example` into `config.yaml` and fill your token there
 
 4. Start the project
 `python main.py`

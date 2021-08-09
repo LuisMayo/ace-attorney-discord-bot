@@ -6,7 +6,11 @@ from objection_engine.beans.comment import Comment
 
 class Message:
     def __init__(self, update: Message):
-        self.user = User(update.author)
+        try:
+            self.user = User(update.guild.get_member(update.author.id))
+        except Exception as e:
+            self.user = User(update.author)
+            print(e)
         self.evidence = None
         tmp = update.clean_content
         tmp = re.sub(r'(https?)\S*', '(link)', tmp) # links

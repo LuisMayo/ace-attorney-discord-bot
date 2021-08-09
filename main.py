@@ -21,6 +21,8 @@ from typing import List
 renderQueue = []
 deletionQueue = []
 
+intents = discord.Intents.default()
+intents.members = True
 def loadConfig():
     try:
         with open("config.yaml") as file:
@@ -49,7 +51,7 @@ def loadConfig():
 if not loadConfig():
     exit()
 
-courtBot = commands.AutoShardedBot(command_prefix=prefix, Intents=discord.Intents.default())
+courtBot = commands.AutoShardedBot(command_prefix=prefix, Intents=intents)
 # Default 'help' command is removed, we will make our own
 courtBot.remove_command("help")
 currentActivityText = f"{prefix}help"

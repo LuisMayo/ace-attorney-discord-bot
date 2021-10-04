@@ -314,6 +314,11 @@ def renderThread():
 
 backgroundThread = threading.Thread(target=renderThread, name="RenderThread")
 backgroundThread.start()
+# Even while threads in python are not concurrent in CPU, the rendering process may use a lot of disk I/O so having two threads
+# May help speed up things
+backgroundThread2 = threading.Thread(target=renderThread, name="RenderThread2")
+backgroundThread2.start()
 
 courtBot.run(token)
 backgroundThread.join()
+backgroundThread2.join()

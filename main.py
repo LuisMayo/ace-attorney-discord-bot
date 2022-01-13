@@ -121,7 +121,7 @@ async def queue(context):
     clean([], filename)
 
 @courtBot.command()
-async def render(context, numberOfMessages: int):
+async def render(context, numberOfMessages: int, music: str = 'pwr'):
     global renderQueue
     feedbackMessage = await context.send(content="`Fetching messages...`")
     try:
@@ -152,7 +152,7 @@ async def render(context, numberOfMessages: int):
         if len(courtMessages) < 1:
             raise Exception("There should be at least one person in the conversation.")
 
-        newRender = Render(State.QUEUED, context, feedbackMessage, courtMessages)
+        newRender = Render(State.QUEUED, context, feedbackMessage, courtMessages, music)
         renderQueue.append(newRender)
 
     except Exception as exception:
@@ -302,7 +302,7 @@ def renderThread():
                 if render.getState() == State.QUEUED:
                     render.setState(State.INPROGRESS)
                     try:
-                        render_comment_list(render.getMessages(), render.getOutputFilename())
+                        render_comment_list(render.getMessages(), render.getOutputFilename(), music_code=render.music_code)
                         render.setState(State.RENDERED)
                     except Exception as exception:
                         print(f"Error: {exception}")

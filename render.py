@@ -15,12 +15,13 @@ class State(Enum):
     DONE = 5
 
 class Render:
-    def __init__(self, state: State, discordContext: Context, feedbackMessage: Message, messages: List[Comment]):
+    def __init__(self, state: State, discordContext: Context, feedbackMessage: Message, messages: List[Comment], music: str):
         self.state = state
         self.discordContext = discordContext
         self.feedbackMessage = feedbackMessage
         self.messages = messages
         self.outputFilename = f"{str(discordContext.message.id)}.mp4"
+        self.music_code = music
 
     def getStateString(self):
         if self.state == State.QUEUED:

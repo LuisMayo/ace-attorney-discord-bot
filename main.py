@@ -14,6 +14,7 @@ from discord.ext import commands, tasks
 from message import Message
 from objection_engine.beans.comment import Comment
 from objection_engine.renderer import render_comment_list
+from objection_engine import get_all_music_available
 from render import Render, State
 from typing import List
 
@@ -84,17 +85,23 @@ async def on_message(message):
         await message.channel.send(embed=embedResponse)
         return
     await courtBot.process_commands(message)
+@courtBot.command()
+async def music(context):
+    music_arr = get_all_music_available()
+    music_string = '\n- '.join(music_arr)
+    await context.reply('The available music is:\n- ' + music_string)
 
 @courtBot.command()
 async def help(context):
     dummyAmount = random.randint(2, 150)
     helpEmbed = discord.Embed(description="Discord bot that turns message chains into ace attorney scenes.\nIf you have any problems, please go to [the support server](https://discord.gg/pcS4MPbRDU).", color=0x3366CC, footer="Do not include these symbols (\"<\" and \">\") when using this command")
     helpEmbed.set_author(name=courtBot.user.name, icon_url=courtBot.user.avatar_url)
-    helpEmbed.add_field(name="How to use?", value=f"`{prefix}render <number_of_messages>`", inline=False)
+    helpEmbed.add_field(name="How to use?", value=f"`{prefix}render <number_of_messages> <music (optional)>`", inline=False)
     helpEmbed.add_field(name="Example", value=f"Turn the last {dummyAmount} messages into an ace attorney scene: `{prefix}render {dummyAmount}`", inline=False)
+    helpEmbed.add_field(name="Example with music", value=f"`{prefix}render {dummyAmount} tat`", inline=False)
+    helpEmbed.add_field(name="Know available music", value=f"`{prefix}music`", inline=False)
     helpEmbed.add_field(name="Starting message", value="By default the bot will load the specified number of messages from the last message (before using the command) going backwards, if you want the message count to start from another message, reply to it when using the command.", inline=False)
-    helpMessage = await context.send(embed=helpEmbed)
-    addToDeletionQueue(helpMessage)
+    await context.send(embed=helpEmbed)
 
 # This command is only for the bot owner, it will ignore everybody else
 @courtBot.command()

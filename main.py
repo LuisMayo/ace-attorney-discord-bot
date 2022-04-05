@@ -130,6 +130,12 @@ async def queue(context):
 @courtBot.command()
 async def render(context, numberOfMessages: int, music: str = 'pwr'):
     global renderQueue
+    petitionsFromSameGuild = [x for x in renderQueue if x.context.guild.id == context.guild.id]
+    petitionsFromSameUser = [x for x in renderQueue if x.context.user.id == context.user.id]
+    if (len(petitionsFromSameGuild) > 5):
+        raise Exception("Only up to five renders per guild are allowed")
+    if (len(petitionsFromSameUser) > 3):
+        raise Exception("Only up to three renders per user are allowed")
     feedbackMessage = await context.send(content="`Fetching messages...`")
     try:
         if not (numberOfMessages in range(1, 151)):
@@ -163,7 +169,7 @@ async def render(context, numberOfMessages: int, music: str = 'pwr'):
         renderQueue.append(newRender)
 
     except Exception as exception:
-        exceptionEmbed = discord.Embed(description=exception, color=0xff0000)
+        exceptionEmbed = discord.Embed(description=str(exception), color=0xff0000)
         await feedbackMessage.edit(content="", embed=exceptionEmbed)
         addToDeletionQueue(feedbackMessage)
 

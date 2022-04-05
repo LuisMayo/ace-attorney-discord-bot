@@ -28,7 +28,7 @@ def loadConfig():
     try:
         with open("config.yaml") as file:
             config = yaml.load(file, Loader=yaml.FullLoader)
-            global token, prefix, deletionDelay
+            global token, prefix, deletionDelay, max_per_guild, max_per_user
 
             token = config["token"].strip()
             if not token:
@@ -41,7 +41,17 @@ def loadConfig():
             deletionDelay = config["deletionDelay"].strip()
             if not deletionDelay:
                 raise Exception("The 'deletionDelay' field is missing in the config file (config.yaml)!")
+
+            max = config["max_tasks"]
+            if max is not None:
+                max_per_guild = max["per_guild"]
+                max_per_user = max["per_user"]
             
+            if not max_per_guild:
+                max_per_guild = 100
+            if not max_per_user:
+                max_per_user = 5
+
             return True
     except KeyError as keyErrorException:
         print(f"The mapping key {keyErrorException} is missing in the config file (config.yaml)!")
@@ -130,14 +140,15 @@ async def queue(context):
 @courtBot.command()
 async def render(context, numberOfMessages: int, music: str = 'pwr'):
     global renderQueue
-    petitionsFromSameGuild = [x for x in renderQueue if x.context.guild.id == context.guild.id]
-    petitionsFromSameUser = [x for x in renderQueue if x.context.user.id == context.user.id]
-    if (len(petitionsFromSameGuild) > 5):
-        raise Exception("Only up to five renders per guild are allowed")
-    if (len(petitionsFromSameUser) > 3):
-        raise Exception("Only up to three renders per user are allowed")
-    feedbackMessage = await context.send(content="`Fetching messages...`")
+    feedbackMessage = await context.send(content="`Checking queue...`")
+    petitionsFromSameGuild = [x for x in renderQueue if x.discordContext.guild.id == context.guild.id]
+    petitionsFromSameUser = [x for x in renderQueue if x.discordContext.author.id == context.author.id]
     try:
+        if (len(petitionsFromSameGuild) > max_per_guild):
+            raise Exception(f"Only up to {max_per_guild} renders per guild are allowed")
+        if (len(petitionsFromSameUser) > max_per_user):
+            raise Exception(f"Only up to {max_per_user} renders per user are allowed")
+        await feedbackMessage.edit(content="`Fetching messages...`")
         if not (numberOfMessages in range(1, 151)):
             raise Exception("Number of messages must be between 1 and 150")
 

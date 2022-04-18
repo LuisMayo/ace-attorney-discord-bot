@@ -313,7 +313,7 @@ def clean(thread: List[Comment], filename):
     try:
         for comment in thread:
             if (comment.evidence_path is not None):
-                os.remove(comment.evidente_path)
+                os.remove(comment.evidence_path)
     except Exception as exception:
         print(f"Error: {exception}")
 

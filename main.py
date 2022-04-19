@@ -326,7 +326,7 @@ def renderThread():
                 if render.getState() == State.QUEUED:
                     render.setState(State.INPROGRESS)
                     try:
-                        render_comment_list(render.getMessages(), render.getOutputFilename(), music_code=render.music_code)
+                        render_comment_list(render.getMessages(), render.getOutputFilename(), music_code=render.music_code, resolution_scale=2)
                         render.setState(State.RENDERED)
                     except Exception as exception:
                         print(f"Error: {exception}")

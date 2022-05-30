@@ -1,3 +1,4 @@
 discord.py
 emoji
 pyyaml
+git+https://github.com/LuisMayo/objection_engine

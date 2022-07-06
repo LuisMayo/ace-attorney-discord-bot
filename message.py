@@ -34,6 +34,15 @@ class Message:
                 tmp += ' (audio)'
             else:
                 tmp += ' (file)'
+        for embed in update.embeds:
+            if embed.type == 'image':
+                tmp += ' (image)'
+                url = embed.thumbnail.proxy_url
+                name = url.split('/')[-1]
+                response = requests.get(url)
+                with open(name, 'wb') as file:
+                    file.write(response.content)
+                self.evidence = name
         self.text = tmp
     def to_Comment(self):
         return Comment(user_id=self.user.id, user_name=self.user.name, text_content=self.text, evidence_path=self.evidence)

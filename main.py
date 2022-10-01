@@ -28,7 +28,7 @@ def loadConfig():
     try:
         with open("config.yaml") as file:
             config = yaml.load(file, Loader=yaml.FullLoader)
-            global token, prefix, deletionDelay, max_per_guild, max_per_user
+            global token, prefix, deletionDelay, max_per_guild, max_per_user, invite_link
 
             token = config["token"].strip()
             if not token:
@@ -52,6 +52,7 @@ def loadConfig():
             if not max_per_user:
                 max_per_user = 5
 
+            invite_link = config["invite_link"]
             return True
     except KeyError as keyErrorException:
         print(f"The mapping key {keyErrorException} is missing in the config file (config.yaml)!")
@@ -100,6 +101,11 @@ async def music(context):
     music_arr = get_all_music_available()
     music_string = '\n- '.join(music_arr)
     await context.reply('The available music is:\n- ' + music_string)
+
+@courtBot.command()
+async def invite(context):
+    if invite_link is not None:
+        await context.reply(invite_link)
 
 @courtBot.command()
 async def help(context):

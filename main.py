@@ -5,6 +5,7 @@ import requests
 import sys
 import threading
 import time
+import json
 import yaml
 
 sys.path.append("./objection_engine")
@@ -262,6 +263,8 @@ async def renderQueueLoop():
                         with open(render.getOutputFilename(), 'rb') as videoFile:
                             files = {'files[]': (render.getOutputFilename(), videoFile)}
                             response = requests.post('https://uguu.se/upload.php?output=text', files=files).content.decode("utf-8").strip()
+                            parsed_response = json.loads(response)
+                            url = parsed_response["files"][0]["url"]
                             newFeedback = f"""
                             `Fetching messages... Done!`
                             `Your video is being generated... Done!`
@@ -269,7 +272,7 @@ async def renderQueueLoop():
                             `Trying to upload file to an external server... Done!`
                             """
                             await render.updateFeedback(newFeedback)
-                            await render.getContext().send(content=f"{render.getContext().author.mention}\n{response}\n_This video will be deleted in 48 hours_")
+                            await render.getContext().send(content=f"{render.getContext().author.mention}\n{url}\n_This video will be deleted in 48 hours_")
                             render.setState(State.DONE)
 
                     except Exception as exception:

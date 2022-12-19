@@ -7,7 +7,7 @@ import threading
 import time
 import json
 import yaml
-
+import gc
 sys.path.append("./objection_engine")
 
 from deletion import Deletion
@@ -64,7 +64,7 @@ def loadConfig():
 if not loadConfig():
     exit()
 
-courtBot = commands.AutoShardedBot(command_prefix=prefix, Intents=intents)
+courtBot = commands.AutoShardedBot(command_prefix=prefix, Intents=intents, max_messages=None)
 # Default 'help' command is removed, we will make our own
 courtBot.remove_command("help")
 currentActivityText = f"{prefix}help"
@@ -156,8 +156,8 @@ async def render(context, numberOfMessages: int, music: str = 'pwr'):
         if (len(petitionsFromSameUser) > max_per_user):
             raise Exception(f"Only up to {max_per_user} renders per user are allowed")
         await feedbackMessage.edit(content="`Fetching messages...`")
-        if not (numberOfMessages in range(1, 151)):
-            raise Exception("Number of messages must be between 1 and 150")
+        if not (numberOfMessages in range(1, 101)):
+            raise Exception("Number of messages must be between 1 and 100")
 
         # baseMessage is the message from which the specified number of messages will be fetch, not including itself
         baseMessage = context.message.reference.resolved if context.message.reference else context.message
@@ -190,6 +190,11 @@ async def render(context, numberOfMessages: int, music: str = 'pwr'):
         exceptionEmbed = discord.Embed(description=str(exception), color=0xff0000)
         await feedbackMessage.edit(content="", embed=exceptionEmbed)
         addToDeletionQueue(feedbackMessage)
+
+@tasks.loop(minutes=5)
+async def garbageCollection():
+    gc.collect()
+    print("Garbage collected")
 
 @tasks.loop(seconds=1)
 async def deletionQueueLoop():
@@ -349,9 +354,9 @@ backgroundThread = threading.Thread(target=renderThread, name="RenderThread")
 backgroundThread.start()
 # Even while threads in python are not concurrent in CPU, the rendering process may use a lot of disk I/O so having two threads
 # May help speed up things
-backgroundThread2 = threading.Thread(target=renderThread, name="RenderThread2")
-backgroundThread2.start()
+#backgroundThread2 = threading.Thread(target=renderThread, name="RenderThread2")
+#backgroundThread2.start()
 
 courtBot.run(token)
 backgroundThread.join()
-backgroundThread2.join()
+#backgroundThread2.join()

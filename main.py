@@ -22,6 +22,7 @@ from typing import List
 # Global Variables:
 renderQueue = []
 deletionQueue = []
+lastRender = 0
 
 intents = discord.Intents.default()
 intents.members = True
@@ -29,7 +30,7 @@ def loadConfig():
     try:
         with open("config.yaml") as file:
             config = yaml.load(file, Loader=yaml.FullLoader)
-            global token, prefix, deletionDelay, max_per_guild, max_per_user, invite_link
+            global token, prefix, deletionDelay, max_per_guild, max_per_user, invite_link, cooldown, staff_only
 
             token = config["token"].strip()
             if not token:
@@ -54,6 +55,11 @@ def loadConfig():
                 max_per_user = 5
 
             invite_link = config["invite_link"]
+
+            cooldown = config["cooldown"]
+
+            staff_only = config["staff_only"]
+
             return True
     except KeyError as keyErrorException:
         print(f"The mapping key {keyErrorException} is missing in the config file (config.yaml)!")
@@ -99,17 +105,38 @@ async def on_message(message):
     await courtBot.process_commands(message)
 @courtBot.command()
 async def music(context):
+    if staff_only:
+        if not context.author.guild_permissions.manage_messages:
+            errEmbed = discord.Embed(description="Only staff members can use this command!", color=0xff0000)
+            errMsg = await context.send(embed=errEmbed)
+            addToDeletionQueue(errMsg)
+            return
+
     music_arr = get_all_music_available()
     music_string = '\n- '.join(music_arr)
     await context.reply('The available music is:\n- ' + music_string)
 
 @courtBot.command()
 async def invite(context):
+    if staff_only:
+        if not context.author.guild_permissions.manage_messages:
+            errEmbed = discord.Embed(description="Only staff members can use this command!", color=0xff0000)
+            errMsg = await context.send(embed=errEmbed)
+            addToDeletionQueue(errMsg)
+            return
+
     if invite_link is not None:
         await context.reply(invite_link)
 
 @courtBot.command()
 async def help(context):
+    if staff_only:
+        if not context.author.guild_permissions.manage_messages:
+            errEmbed = discord.Embed(description="Only staff members can use this command!", color=0xff0000)
+            errMsg = await context.send(embed=errEmbed)
+            addToDeletionQueue(errMsg)
+            return
+
     dummyAmount = random.randint(2, 150)
     helpEmbed = discord.Embed(description="Discord bot that turns message chains into ace attorney scenes.\nIf you have any problems, please go to [the support server](https://discord.gg/pcS4MPbRDU).", color=0x3366CC, footer="Do not include these symbols (\"<\" and \">\") when using this command")
     helpEmbed.set_author(name=courtBot.user.name, icon_url=courtBot.user.avatar_url)
@@ -124,6 +151,7 @@ async def help(context):
 @courtBot.command()
 @commands.is_owner()
 async def queue(context):
+
     filename = "queue.txt"
     with open(filename, 'w', encoding="utf-8") as queue:
         global renderQueue
@@ -145,7 +173,22 @@ async def queue(context):
     clean([], filename)
 
 @courtBot.command()
-async def render(context, numberOfMessages: int, music: str = 'pwr'):
+async def render(context, numberOfMessages: int = 0, music: str = 'pwr'):
+    if staff_only:
+        if not context.author.guild_permissions.manage_messages:
+            errEmbed = discord.Embed(description="Only staff members can use this command!", color=0xff0000)
+            errMsg = await context.send(embed=errEmbed)
+            addToDeletionQueue(errMsg)
+            return
+            
+    global lastRender, cooldown
+    if lastRender is not None and cooldown is not None:
+        if (time.time() - lastRender) < cooldown:
+            errEmbed = discord.Embed(description=f"Please wait **{round(cooldown - (time.time() - lastRender))}** seconds before using this command again.", color=0xff0000)
+            errMsg = await context.send(embed=errEmbed)
+            addToDeletionQueue(errMsg)
+            return
+
     global renderQueue
     feedbackMessage = await context.send(content="`Checking queue...`")
     petitionsFromSameGuild = [x for x in renderQueue if x.discordContext.guild.id == context.guild.id]
@@ -156,6 +199,8 @@ async def render(context, numberOfMessages: int, music: str = 'pwr'):
         if (len(petitionsFromSameUser) > max_per_user):
             raise Exception(f"Only up to {max_per_user} renders per user are allowed")
         await feedbackMessage.edit(content="`Fetching messages...`")
+        if numberOfMessages == 0:
+            raise Exception("Please specify the number of messages to be rendered!")
         if not (numberOfMessages in range(1, 101)):
             raise Exception("Number of messages must be between 1 and 100")
 
@@ -185,6 +230,8 @@ async def render(context, numberOfMessages: int, music: str = 'pwr'):
 
         newRender = Render(State.QUEUED, context, feedbackMessage, courtMessages, music)
         renderQueue.append(newRender)
+
+        lastRender = time.time()
 
     except Exception as exception:
         exceptionEmbed = discord.Embed(description=str(exception), color=0xff0000)

@@ -5,3 +5,5 @@ max_tasks:
   per_guild: 100
   per_user: 5
 invite_link: ""
+cooldown: 30
+staff_only: False

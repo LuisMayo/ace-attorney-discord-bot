@@ -291,55 +291,14 @@ async def renderQueueLoop():
                 await render.updateFeedback(newFeedback)
 
                 render.setState(State.UPLOADING)
-
-                # If the file size is lower than the maximun file size allowed in this guild, upload it to Discord
-                fileSize = os.path.getsize(render.getOutputFilename())
-                if fileSize < render.getContext().channel.guild.filesize_limit:
-                    await render.getContext().send(content=render.getContext().author.mention, file=discord.File(render.getOutputFilename()))
-                    render.setState(State.DONE)
-                    newFeedback = f"""
-                    `Fetching messages... Done!`
-                    `Your video is being generated... Done!`
-                    `Uploading file to Discord... Done!`
-                    """
-                    await render.updateFeedback(newFeedback)
-                else:
-                    try:
-                        newFeedback = f"""
-                        `Fetching messages... Done!`
-                        `Your video is being generated... Done!`
-                        `Video file too big for you server! {round(fileSize/1000000, 2)} MB`
-                        `Trying to upload file to an external server...`
-                        """
-                        await render.updateFeedback(newFeedback)
-                        with open(render.getOutputFilename(), 'rb') as videoFile:
-                            files = {'files[]': (render.getOutputFilename(), videoFile)}
-                            response = requests.post('https://uguu.se/upload.php?output=text', files=files).content.decode("utf-8").strip()
-                            parsed_response = json.loads(response)
-                            url = parsed_response["files"][0]["url"]
-                            newFeedback = f"""
-                            `Fetching messages... Done!`
-                            `Your video is being generated... Done!`
-                            `Video file too big for you server! {round(fileSize/1000000, 2)} MB`
-                            `Trying to upload file to an external server... Done!`
-                            """
-                            await render.updateFeedback(newFeedback)
-                            await render.getContext().send(content=f"{render.getContext().author.mention}\n{url}\n_This video will be deleted in 48 hours_")
-                            render.setState(State.DONE)
-
-                    except Exception as exception:
-                        newFeedback = f"""
-                        `Fetching messages... Done!`
-                        `Your video is being generated... Done!`
-                        `Video file too big for you server! {round(fileSize/1000000, 2)} MB`
-                        `Trying to upload file to an external server... Failed!`
-                        """
-                        await render.updateFeedback(newFeedback)
-                        exceptionEmbed = discord.Embed(description=exception, color=0xff0000)
-                        exceptionMessage = await render.getContext().send(embed=exceptionEmbed)
-                        addToDeletionQueue(exceptionMessage)
-                        render.setState(State.DONE)
-
+                await render.getContext().send(content=render.getContext().author.mention, file=discord.File(render.getOutputFilename()))
+                render.setState(State.DONE)
+                newFeedback = f"""
+                `Fetching messages... Done!`
+                `Your video is being generated... Done!`
+                `Uploading file to Discord... Done!`
+                """
+                await render.updateFeedback(newFeedback)
         except Exception as exception:
             print(f"Error: {exception}")
             try:

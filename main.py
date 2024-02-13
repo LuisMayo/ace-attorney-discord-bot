@@ -1,11 +1,10 @@
 import discord
 import os
 import random
-import requests
+import traceback
 import sys
 import threading
 import time
-import json
 import yaml
 import gc
 sys.path.append("./objection_engine")
@@ -355,6 +354,24 @@ def renderThread():
                         break
         except Exception as exception:
             print(f"Error: {exception}")
+
+@courtBot.event
+async def on_command_error(ctx, error):
+        # Source: https://gist.github.com/EvieePy/7822af90858ef65012ea500bcecf1612
+        ignored = (commands.CommandNotFound, )
+
+        # Allows us to check for original exceptions raised and sent to CommandInvokeError.
+        # If nothing is found. We keep the exception passed to on_command_error.
+        error = getattr(error, 'original', error)
+
+        # Anything in ignored will return and prevent anything happening.
+        if isinstance(error, ignored):
+            return
+        
+        # All other Errors not returned come here. And we can just print the default TraceBack.
+        print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+
 
 backgroundThread = threading.Thread(target=renderThread, name="RenderThread")
 backgroundThread.start()

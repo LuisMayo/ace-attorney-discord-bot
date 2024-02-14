@@ -381,7 +381,7 @@ backgroundThread.start()
 #backgroundThread2.start()
 
 try:
-    courtBot.run(token + 'a')
+    courtBot.run(token)
 except Exception as e:
     print(str(e))
     os._exit(1)

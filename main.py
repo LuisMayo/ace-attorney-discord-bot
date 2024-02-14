@@ -380,6 +380,12 @@ backgroundThread.start()
 #backgroundThread2 = threading.Thread(target=renderThread, name="RenderThread2")
 #backgroundThread2.start()
 
-courtBot.run(token)
+try:
+    courtBot.run(token + 'a')
+except Exception as e:
+    print(str(e))
+    os._exit(1)
+
+
 backgroundThread.join()
 #backgroundThread2.join()
